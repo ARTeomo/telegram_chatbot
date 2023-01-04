@@ -1,0 +1,8 @@
+{
+  "openai_api_key": "YOUR_OPENAI_API_KEY",
+  "telegram_bot_token": "YORUR_TELEGRAM_BOT_TOKEN",
+  "openweathermap_api_key": "YOUR_OPENWEATHERMAP_API_KEY",
+  "newsapi_api_key": "YOUR_NEWSAPI_API_KEY",
+  "country_id": "YOUR_COUNTRY_ID",
+  "city_id": "YOUR_CITY_ID"
+}
