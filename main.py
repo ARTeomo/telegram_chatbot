@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 import openai
 import telegram
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Load API keys and tokens from configuration file
 try:
-    with open("/var/www/telegram_chatbot/config.json") as f:
+    with open("/var/www/telegram_chatbot/config.json", "r") as f:
         config = json.load(f)
 except FileNotFoundError:
     logger.error("config.json file not found")
