@@ -104,7 +104,10 @@ def message(update, context):
         "model": "text-davinci-002",
         "prompt": prompt,
         "max_tokens": 2048,
-        "temperature": 0.7,
+        "temperature": 0.5,
+        "top_p": 1,
+        "frequency_penalty": 1,
+        "presence_penalty": 1,
     }
     logger.info("Sending OpenAI API request with data: %s", data)
     try:
