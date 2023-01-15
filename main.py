@@ -105,7 +105,6 @@ def message(update, context):
         "prompt": prompt,
         "max_tokens": 2048,
         "temperature": 0.5,
-        "top_p": 1,
         "frequency_penalty": 1,
         "presence_penalty": 1,
     }
