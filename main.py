@@ -26,7 +26,7 @@ except FileNotFoundError:
     logger.error("config.json file not found")
     exit(1)
 except json.JSONDecodeError:
-    logger.error("Error decoding config.json file")
+    logger.error("Error load API keys and tokens from config.json file: %s", err)
     exit(1)
 
 openai_api_key = config["openai_api_key"]
@@ -118,7 +118,7 @@ def message(update, context):
         logger.error("OpenAI API request failed: %s", err)
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="An error occurred while generating a response: {}".format(err),
+            text="An error occurred while generating a response",
         )
 
 
@@ -148,7 +148,7 @@ def image(update, context):
         logger.error("OpenAI API request failed: %s", err)
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="An error occurred while generating an image: {}".format(err),
+            text="An error occurred while generating an image",
         )
 
 
@@ -204,9 +204,9 @@ def weather(update, context):
         # Send the weather forecast to the user
         context.bot.send_message(chat_id=update.effective_chat.id, text=forecast_report)
     else:  # Error
-        logger.error("Error retrieving weather forecast")
+        logger.error("OpenWeatherMap API request failed: %s", err)
         context.bot.send_message(
-            chat_id=update.effective_chat.id, text="Error retrieving weather forecast"
+            chat_id=update.effective_chat.id, text="An error occurred while retrieving a weather forecast"
         )
 
 
@@ -241,8 +241,9 @@ def news(update, context):
         # Send the message to the user
         context.bot.send_message(chat_id=update.effective_chat.id, text=message)
     else:  # Error
+        logger.error("News API request failed: %s", err)
         context.bot.send_message(
-            chat_id=update.effective_chat.id, text="Error retrieving news"
+            chat_id=update.effective_chat.id, text="An error occurred while retrieving news"
         )
 
 
@@ -258,9 +259,9 @@ def joke(update, context):
         # Send the joke to the user
         context.bot.send_message(chat_id=update.effective_chat.id, text=joke)
     else:  # Error
-        logger.error("Error retrieving joke")
+        logger.error("Chuck Norris API request failed: %s", err)
         context.bot.send_message(
-            chat_id=update.effective_chat.id, text="Error retrieving joke"
+            chat_id=update.effective_chat.id, text="An error occurred while retrieving a joke"
         )
 
 
