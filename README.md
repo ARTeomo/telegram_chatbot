@@ -65,7 +65,7 @@ To use ChatGPT, you will need to:
 
     Create a configuration file named chatbot.conf in the /etc/apache2/sites-available directory with the following structure:
 
-    <VirtualHost *:80>
+    <VirtualHost *:443>
         ServerName chatbot.example.com
         ServerAdmin webmaster@example.com
         DocumentRoot /var/www/telegram_chatbot
@@ -79,6 +79,11 @@ To use ChatGPT, you will need to:
             Order deny,allow
             Allow from all
         </Directory>
+
+        LoadModule ssl_module module modules/mod_ssl.so
+        SSLEngine on
+        SSLCertificateFile /var/www/telegram_chatbot/ssl/cert.pem
+        SSLCertificateKeyFile /var/www/telegram_chatbot/ssl/key.pem
 
         ErrorLog ${APACHE_LOG_DIR}/error.log
         CustomLog ${APACHE_LOG_DIR}/access.log combined
