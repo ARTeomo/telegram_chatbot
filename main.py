@@ -25,8 +25,8 @@ try:
 except FileNotFoundError:
     logger.error("config.json file not found")
     exit(1)
-except json.JSONDecodeError:
-    logger.error("Error load API keys and tokens from config.json file: %s", err)
+except json.JSONDecodeError as json_err:
+    logger.error(f"Error load API keys and tokens from config.json file: {json_err}")
     exit(1)
 
 openai_api_key = config["openai_api_key"]
@@ -100,7 +100,7 @@ def message(update, context):
     endpoint = "https://api.openai.com/v1/completions"
     api_key = openai_api_key
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-    data = {
+    message_data = {
         "model": "text-davinci-002",
         "prompt": prompt,
         "max_tokens": 2048,
@@ -108,17 +108,17 @@ def message(update, context):
         "frequency_penalty": 1,
         "presence_penalty": 1,
     }
-    logger.info("Sending OpenAI API request with data: %s", data)
+    logger.info(f"Sending OpenAI API request with data: {message_data}")
     try:
-        response = requests.post(endpoint, headers=headers, json=data)
+        response = requests.post(endpoint, headers=headers, json=message_data)
         response.raise_for_status()
         response_text = response.json()["choices"][0]["text"]
         context.bot.send_message(chat_id=update.effective_chat.id, text=response_text)
-    except requests.exceptions.RequestException as err:
-        logger.error("OpenAI API request failed: %s", err)
+    except requests.exceptions.RequestException as message_err:
+        logger.error(f"OpenAI API request failed: {message_err}")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="An error occurred while generating a response",
+            text="An error occurred while generating a response, please try again later",
         )
 
 
@@ -131,24 +131,24 @@ def image(update, context):
     endpoint = "https://api.openai.com/v1/images/generations"
     api_key = openai_api_key
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-    data = {
+    image_data = {
         "model": "image-alpha-001",
         "prompt": message,
         "num_images": 1,
         "size": "512x512",
         "response_format": "url",
     }
-    logger.info("Sending OpenAI API request with data: %s", data)
+    logger.info(f"Sending OpenAI API request with data: {image_data}")
     try:
-        response = requests.post(endpoint, headers=headers, json=data)
+        response = requests.post(endpoint, headers=headers, json=image_data)
         response.raise_for_status()
         image_url = response.json()["data"][0]["url"]
         context.bot.send_photo(chat_id=update.effective_chat.id, photo=image_url)
-    except requests.exceptions.RequestException as err:
-        logger.error("OpenAI API request failed: %s", err)
+    except requests.exceptions.RequestException as image_err:
+        logger.error(f"OpenAI API request failed: {image_err}")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="An error occurred while generating an image",
+            text="An error occurred while generating an image, please try again later",
         )
 
 
@@ -160,53 +160,62 @@ def weather(update, context):
             city_id, openweathermap_api_key
         )
     )
-    response = requests.get(weather_url)
-    if response.status_code == 200:  # Success
-        # Parse the response and extract the weather data
-        data = response.json()
-        forecast_list = data["list"]
-        forecast = []
-        for i in range(5):
-            day = forecast_list[i]
-            time_stamp = day["dt_txt"]
-            temperature = day["main"]["temp"]
-            temperature_min = day["main"]["temp_min"]
-            temperature_max = day["main"]["temp_max"]
-            humidity = day["main"]["humidity"]
-            wind_speed = day["wind"]["speed"]
-            description = day["weather"][0]["description"]
-            forecast.append(
-                {
-                    "time_stamp": time_stamp,
-                    "temperature": temperature,
-                    "temperature_min": temperature_min,
-                    "temperature_max": temperature_max,
-                    "humidity": humidity,
-                    "wind_speed": wind_speed,
-                    "description": description,
-                }
-            )
-        # Format the weather forecast as a string
-        forecast_report = ""
-        for day in forecast:
-            forecast_report += "Time: {}\n".format(day["time_stamp"])
-            forecast_report += (
-                "Temperature: {:.1f}°C (min: {:.1f}°C, max: {:.1f}°C)\n".format(
-                    day["temperature"] - 273.15,
-                    day["temperature_min"] - 273.15,
-                    day["temperature_max"] - 273.15,
+    try:
+        response = requests.get(weather_url)
+        if response.status_code == 200:  # Success
+            # Parse the response and extract the weather data
+            weather_data = response.json()
+            forecast_list = weather_data["list"]
+            forecast = []
+            for i in range(5):
+                day = forecast_list[i]
+                time_stamp = day["dt_txt"]
+                temperature = day["main"]["temp"]
+                temperature_min = day["main"]["temp_min"]
+                temperature_max = day["main"]["temp_max"]
+                humidity = day["main"]["humidity"]
+                wind_speed = day["wind"]["speed"]
+                description = day["weather"][0]["description"]
+                forecast.append(
+                    {
+                        "time_stamp": time_stamp,
+                        "temperature": temperature,
+                        "temperature_min": temperature_min,
+                        "temperature_max": temperature_max,
+                        "humidity": humidity,
+                        "wind_speed": wind_speed,
+                        "description": description,
+                    }
                 )
+            # Format the weather forecast as a string
+            forecast_report = ""
+            for day in forecast:
+                forecast_report += "Time: {}\n".format(day["time_stamp"])
+                forecast_report += (
+                    "Temperature: {:.1f}°C (min: {:.1f}°C, max: {:.1f}°C)\n".format(
+                        day["temperature"] - 273.15,
+                        day["temperature_min"] - 273.15,
+                        day["temperature_max"] - 273.15,
+                    )
+                )
+                forecast_report += "Humidity: {}%\n".format(day["humidity"])
+                forecast_report += "Wind Speed: {} m/s\n".format(day["wind_speed"])
+                forecast_report += "Conditions: {}\n".format(day["description"])
+                forecast_report += "\n"
+            # Send the weather forecast to the user
+            context.bot.send_message(
+                chat_id=update.effective_chat.id, text=forecast_report
             )
-            forecast_report += "Humidity: {}%\n".format(day["humidity"])
-            forecast_report += "Wind Speed: {} m/s\n".format(day["wind_speed"])
-            forecast_report += "Conditions: {}\n".format(day["description"])
-            forecast_report += "\n"
-        # Send the weather forecast to the user
-        context.bot.send_message(chat_id=update.effective_chat.id, text=forecast_report)
-    else:  # Error
-        logger.error("OpenWeatherMap API request failed: %s", err)
+        else:  # Error
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="An error occurred while retrieving a weather forecast",
+            )
+    except Exception as weather_err:
+        logger.error(f"OpenWeatherMap API request failed: {weather_err}")
         context.bot.send_message(
-            chat_id=update.effective_chat.id, text="An error occurred while retrieving a weather forecast"
+            chat_id=update.effective_chat.id,
+            text="An error occurred while retrieving a weather forecast, please try again later",
         )
 
 
@@ -221,29 +230,33 @@ def news(update, context):
     }
 
     # Send the request to the News API
-    response = requests.get("https://newsapi.org/v2/top-headlines", params=params)
+    news_url = "https://newsapi.org/v2/top-headlines"
+    try:
+        response = requests.get(news_url, params=params)
+        if response.status_code == 200:  # Success
+            # Parse the response and extract the news articles
+            news_data = response.json()
+            articles = news_data["articles"]
 
-    # Check the status code of the response
-    if response.status_code == 200:  # Success
-        # Parse the response
-        data = response.json()
+            # Build the message to send to the user
+            message = ""
+            for article in articles:
+                title = article["title"]
+                url = article["url"]
+                message += f"\n- {title}: {url}"
 
-        # Extract the news articles from the response
-        articles = data["articles"]
-
-        # Build the message to send to the user
-        message = ""
-        for article in articles:
-            title = article["title"]
-            url = article["url"]
-            message += f"\n- {title}: {url}"
-
-        # Send the message to the user
-        context.bot.send_message(chat_id=update.effective_chat.id, text=message)
-    else:  # Error
-        logger.error("News API request failed: %s", err)
+            # Send the message to the user
+            context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+        else:  # Error
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="An error occurred while retrieving news",
+            )
+    except Exception as news_err:
+        logger.error(f"News API request failed: {news_err}")
         context.bot.send_message(
-            chat_id=update.effective_chat.id, text="An error occurred while retrieving news"
+            chat_id=update.effective_chat.id,
+            text="An error occurred while retrieving news, please try again later",
         )
 
 
@@ -251,17 +264,24 @@ def joke(update, context):
     """Joke command handler. Sends a joke to the user."""
     # Use the Chuck Norris API to retrieve a joke
     joke_url = "https://api.chucknorris.io/jokes/random"
-    response = requests.get(joke_url)
-    if response.status_code == 200:  # Success
-        # Parse the response and extract the joke
-        data = response.json()
-        joke = data["value"]
-        # Send the joke to the user
-        context.bot.send_message(chat_id=update.effective_chat.id, text=joke)
-    else:  # Error
-        logger.error("Chuck Norris API request failed: %s", err)
+    try:
+        response = requests.get(joke_url)
+        if response.status_code == 200:  # Success
+            # Parse the response and extract the joke
+            joke_data = response.json()
+            joke = joke_data["value"]
+            # Send the joke to the user
+            context.bot.send_message(chat_id=update.effective_chat.id, text=joke)
+        else:  # Error
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="An error occurred while retrieving a joke",
+            )
+    except Exception as joke_err:
+        logger.error(f"Chuck Norris API request failed: {joke_err}")
         context.bot.send_message(
-            chat_id=update.effective_chat.id, text="An error occurred while retrieving a joke"
+            chat_id=update.effective_chat.id,
+            text="An error occurred while retrieving a joke, please try again later",
         )
 
 
