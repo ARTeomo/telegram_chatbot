@@ -33,8 +33,7 @@ openai_api_key = config["openai_api_key"]
 telegram_bot_token = config["telegram_bot_token"]
 openweathermap_api_key = config["openweathermap_api_key"]
 newsapi_api_key = config["newsapi_api_key"]
-country_id = config["country_id"]
-city_id = config["city_id"]
+
 
 # Set up OpenAI API client
 openai.api_key = openai_api_key
@@ -49,14 +48,13 @@ def start(update, context):
     """Start command handler. Sends a message to the user explaining what the bot does."""
     # List available commands
     commands = [
-        "/start - start the chatbot",
-        "/help - show available commands",
-        "/about - learn more about me",
-        "/message - send me a message",
-        "/image - generate an image",
-        "/weather - give me the weather forecast",
+        "/hlp - show available commands",
+        "/abt - learn more about me",
+        "/msg - send me a message",
+        "/img - generate an image",
+        "/wea - give me the weather forecast",
         "/news - give me the latest news",
-        "/joke - tell me a joke",
+        "/lol - tell me a joke",
     ]
     command_list = "\n".join(commands)
 
@@ -67,22 +65,21 @@ def start(update, context):
     )
 
 
-def help(update, context):
+def hlp(update, context):
     """Help command handler. Sends a message to the user listing available commands."""
     commands = [
-        "/start - start the chatbot",
-        "/help - show available commands",
-        "/about - learn more about me",
-        "/message - send me a message",
-        "/image - generate an image",
-        "/weather - give me the weather forecast",
+        "/hlp - show available commands",
+        "/abt - learn more about me",
+        "/msg - send me a message",
+        "/img - generate an image",
+        "/wea - give me the weather forecast",
         "/news - give me the latest news",
-        "/joke - tell me a joke",
+        "/lol - tell me a joke",
     ]
     context.bot.send_message(chat_id=update.effective_chat.id, text="\n".join(commands))
 
 
-def about(update, context):
+def abt(update, context):
     """About command handler. Sends a message to the user explaining more about the bot."""
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -90,17 +87,17 @@ def about(update, context):
     )
 
 
-def message(update, context):
+def msg(update, context):
     """Chat command handler. Uses the ChatGPT model to generate a response to the user's message."""
     # Get user's message
-    message = update.message.text
+    msg = update.message.text
 
     # Use the OpenAI API to generate a response
-    prompt = f"User: {message}\n" f"Chatbot: "
+    prompt = f"User: {msg}\n" f"Chatbot: "
     endpoint = "https://api.openai.com/v1/completions"
     api_key = openai_api_key
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-    message_data = {
+    msg_data = {
         "model": "text-davinci-002",
         "prompt": prompt,
         "max_tokens": 2048,
@@ -108,64 +105,81 @@ def message(update, context):
         "frequency_penalty": 1,
         "presence_penalty": 1,
     }
-    logger.info(f"Sending OpenAI API request with data: {message_data}")
+    logger.info(f"Sending OpenAI API request with data: {msg_data}")
     try:
-        response = requests.post(endpoint, headers=headers, json=message_data)
+        response = requests.post(endpoint, headers=headers, json=msg_data)
         response.raise_for_status()
         response_text = response.json()["choices"][0]["text"]
         context.bot.send_message(chat_id=update.effective_chat.id, text=response_text)
-    except requests.exceptions.RequestException as message_err:
-        logger.error(f"OpenAI API request failed: {message_err}")
+    except requests.exceptions.RequestException as msg_err:
+        logger.error(f"OpenAI API request failed: {msg_err}")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="An error occurred while generating a response, please try again later",
         )
 
 
-def image(update, context):
+def img(update, context):
     """Image message handler. Uses the Dall-E model to generate an image in response to the user's message."""
     # Get user's message
-    message = update.message.text
+    img = update.message.text
 
     # Use the OpenAI API to generate an image
     endpoint = "https://api.openai.com/v1/images/generations"
     api_key = openai_api_key
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-    image_data = {
+    img_data = {
         "model": "image-alpha-001",
-        "prompt": message,
+        "prompt": img,
         "num_images": 1,
         "size": "512x512",
         "response_format": "url",
     }
-    logger.info(f"Sending OpenAI API request with data: {image_data}")
+    logger.info(f"Sending OpenAI API request with data: {img_data}")
     try:
-        response = requests.post(endpoint, headers=headers, json=image_data)
+        response = requests.post(endpoint, headers=headers, json=img_data)
         response.raise_for_status()
-        image_url = response.json()["data"][0]["url"]
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo=image_url)
-    except requests.exceptions.RequestException as image_err:
-        logger.error(f"OpenAI API request failed: {image_err}")
+        img_url = response.json()["data"][0]["url"]
+        context.bot.send_photo(chat_id=update.effective_chat.id, photo=img_url)
+    except requests.exceptions.RequestException as img_err:
+        logger.error(f"OpenAI API request failed: {img_err}")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="An error occurred while generating an image, please try again later",
         )
 
 
-def weather(update, context):
+def get_ip():
+    response = requests.get("https://api64.ipify.org?format=json").json()
+    return response["ip"]
+
+
+def get_location():
+    ip_address = get_ip()
+    response = requests.get(f"https://ipapi.co/{ip_address}/json/").json()
+    location_data = {
+        "ip": ip_address,
+        "lat": response.get("latitude"),
+        "lon": response.get("longitude"),
+        "country": response.get("country_code"),
+    }
+    return location_data
+
+
+def wea(update, context):
     """Weather command handler. Sends the weather forecast to the user."""
     # Use the OpenWeatherMap API to retrieve the weather forecast
-    weather_url = (
-        "https://api.openweathermap.org/data/2.5/forecast?id={}&appid={}".format(
-            city_id, openweathermap_api_key
-        )
+    lat_data = get_location()["lat"]
+    lon_data = get_location()["lon"]
+    wea_url = "https://api.openweathermap.org/data/2.5/forecast?lat={}&lon={}&appid={}".format(
+        lat_data, lon_data, openweathermap_api_key
     )
     try:
-        response = requests.get(weather_url)
+        response = requests.get(wea_url)
         if response.status_code == 200:  # Success
             # Parse the response and extract the weather data
-            weather_data = response.json()
-            forecast_list = weather_data["list"]
+            wea_data = response.json()
+            forecast_list = wea_data["list"]
             forecast = []
             for i in range(5):
                 day = forecast_list[i]
@@ -211,8 +225,8 @@ def weather(update, context):
                 chat_id=update.effective_chat.id,
                 text="An error occurred while retrieving a weather forecast",
             )
-    except Exception as weather_err:
-        logger.error(f"OpenWeatherMap API request failed: {weather_err}")
+    except Exception as wea_err:
+        logger.error(f"OpenWeatherMap API request failed: {wea_err}")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="An error occurred while retrieving a weather forecast, please try again later",
@@ -222,6 +236,7 @@ def weather(update, context):
 def news(update, context):
     """News command handler. Sends the latest news to the user."""
     # Set up the request parameters
+    country_id = get_location()["country"]
     params = {
         "apiKey": newsapi_api_key,
         "country": country_id,
@@ -260,25 +275,25 @@ def news(update, context):
         )
 
 
-def joke(update, context):
+def lol(update, context):
     """Joke command handler. Sends a joke to the user."""
     # Use the Chuck Norris API to retrieve a joke
-    joke_url = "https://api.chucknorris.io/jokes/random"
+    lol_url = "https://api.chucknorris.io/jokes/random"
     try:
-        response = requests.get(joke_url)
+        response = requests.get(lol_url)
         if response.status_code == 200:  # Success
             # Parse the response and extract the joke
-            joke_data = response.json()
-            joke = joke_data["value"]
+            lol_data = response.json()
+            lol = lol_data["value"]
             # Send the joke to the user
-            context.bot.send_message(chat_id=update.effective_chat.id, text=joke)
+            context.bot.send_message(chat_id=update.effective_chat.id, text=lol)
         else:  # Error
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="An error occurred while retrieving a joke",
             )
-    except Exception as joke_err:
-        logger.error(f"Chuck Norris API request failed: {joke_err}")
+    except Exception as lol_err:
+        logger.error(f"Chuck Norris API request failed: {lol_err}")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="An error occurred while retrieving a joke, please try again later",
@@ -291,30 +306,30 @@ dispatcher.add_handler(CommandHandler("start", start))
 start_handler = CommandHandler("start", start)
 dispatcher.add_handler(start_handler)
 
-help_handler = CommandHandler("help", help)
-dispatcher.add_handler(help_handler)
+hlp_handler = CommandHandler("hlp", hlp)
+dispatcher.add_handler(hlp_handler)
 
-about_handler = CommandHandler("about", about)
-dispatcher.add_handler(about_handler)
+abt_handler = CommandHandler("abt", abt)
+dispatcher.add_handler(abt_handler)
 
-message_handler = CommandHandler("message", message)
-dispatcher.add_handler(message_handler)
+msg_handler = CommandHandler("msg", msg)
+dispatcher.add_handler(msg_handler)
 
-image_handler = CommandHandler("image", image)
-dispatcher.add_handler(image_handler)
+img_handler = CommandHandler("img", img)
+dispatcher.add_handler(img_handler)
 
-weather_handler = CommandHandler("weather", weather)
-dispatcher.add_handler(weather_handler)
+wea_handler = CommandHandler("wea", wea)
+dispatcher.add_handler(wea_handler)
 
 news_handler = CommandHandler("news", news)
 dispatcher.add_handler(news_handler)
 
-joke_handler = CommandHandler("joke", joke)
-dispatcher.add_handler(joke_handler)
+lol_handler = CommandHandler("lol", lol)
+dispatcher.add_handler(lol_handler)
 
 # Set up message handler
-message_handler = MessageHandler(Filters.text, message)
-dispatcher.add_handler(message_handler)
+msg_handler = MessageHandler(Filters.text, msg)
+dispatcher.add_handler(msg_handler)
 
 # Start the bot
 updater.start_polling()
