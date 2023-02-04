@@ -29,11 +29,11 @@ except json.JSONDecodeError as json_err:
     logger.error(f"Error load API keys and tokens from config.json file: {json_err}")
     exit(1)
 
+# Set API keys and tokens
 openai_api_key = config["openai_api_key"]
 telegram_bot_token = config["telegram_bot_token"]
 openweathermap_api_key = config["openweathermap_api_key"]
 newsapi_api_key = config["newsapi_api_key"]
-
 
 # Set up OpenAI API client
 openai.api_key = openai_api_key
@@ -59,9 +59,10 @@ def start(update, context):
     command_list = "\n".join(commands)
 
     # Send message to user explaining what the bot does
+    first_name = update.message.from_user.first_name
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Hi, I am a chatbot powered by the ChatGPT model developed by OpenAI. My purpose is to assist users in having natural conversations and answering their questions to the best of my ability. I am constantly learning and improving, so feel free to ask me anything!\n\nAvailable commands:\n{command_list}",
+        text=f"Hi, {first_name}! I am a chatbot powered by the ChatGPT model developed by OpenAI. My purpose is to assist users in having natural conversations and answering their questions to the best of my ability. I am constantly learning and improving, so feel free to ask me anything!\n\nAvailable commands:\n{command_list}",
     )
 
 
@@ -150,11 +151,15 @@ def img(update, context):
 
 
 def get_ip():
+    """Get the user's IP address."""
+    # Use the ipify API to retrieve the user's IP address
     response = requests.get("https://api64.ipify.org?format=json").json()
     return response["ip"]
 
 
 def get_location():
+    """Get the user's location data."""
+    # Use the ipapi API to retrieve the user's location data
     ip_address = get_ip()
     response = requests.get(f"https://ipapi.co/{ip_address}/json/").json()
     location_data = {

@@ -35,7 +35,6 @@ To use ChatGPT, you will need to:
     Telegram bot token
     OpenWeatherMap API key
     NewsAPI API key
-    Country and city ID for weather forecast
 
 # Dependencies
 
@@ -58,9 +57,7 @@ To use ChatGPT, you will need to:
         "openai_api_key": "<your-openai-api-key>",
         "telegram_bot_token": "<your-telegram-bot-token>",
         "openweathermap_api_key": "<your-openweathermap-api-key>",
-        "newsapi_api_key": "<your-newsapi-api-key>",
-        "country_id": "<your-country-id>",
-        "city_id": "<your-city-id>"
+        "newsapi_api_key": "<your-newsapi-api-key>"
     }
 
     Create a configuration file named chatbot.conf in the /etc/apache2/sites-available directory with the following structure:
@@ -97,14 +94,13 @@ To use the chatbot, simply send a message to the bot on Telegram. The chatbot wi
 
 The chatbot also has several commands that can be used to trigger specific actions:
 
-    /start - start the chatbot
-    /help - show available commands
-    /about - learn more about me
-    /message - send me a message
-    /image - generate an image
-    /weather - give me the weather forecast
+    /hlp - show available commands
+    /abt - learn more about me
+    /msg - send me a message
+    /img - generate an image
+    /wea - give me the weather forecast
     /news - give me the latest news
-    /joke - tell me a joke
+    /lol - tell me a joke
  
 # Deployment
 
